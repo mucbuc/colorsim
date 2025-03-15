@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
-project(ColorSimLib)
+project(colorsim_lib)
 
-target_sources(ColorSimLib 
-    INTERFACE 
-    "${CMAKE_CURRENT_SOURCE_DIR}/colorsim.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/colorsim.cpp"
+add_library(colorsim STATIC src/colorsim.hpp)
+
+target_sources(colorsim PRIVATE
+    src/colorsim.cpp
 )
 
+include_directories(PUBLIC SYSTEM ..)

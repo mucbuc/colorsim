@@ -1,28 +1,14 @@
-#include "colors_simulate.hpp"
+#include "colorsim.hpp"
 
-#include "debug.hpp"
-
-#include <sstream>
-
-#include <lib/dawn_wrapper/src/dawn_wrapper.h>
-#include "ns_math.hpp"
-#include <vmath.hpp/vmath_all.hpp>
-
-#include "calc_ui.hpp"
-#include "doc_utils.hpp"
-#include "morph_utils.hpp"
-#include "points_compute.hpp"
-#include "sdf_compute.hpp"
+#include <asserter/src/asserter.hpp>
+#include <text_utils/text_utils.hpp>
 
 using namespace std;
-using namespace om636;
-using namespace CTML;
 using namespace dawn_wrapper;
-using namespace glfw_wrapper;
 
 namespace ns {
 
-struct colors_simulate::Pimpl {
+struct ColorSim::Pimpl {
 
     struct PaletteEntry {
         float_t m_base;
@@ -106,7 +92,7 @@ struct colors_simulate::Pimpl {
             }
         )";
 
-        auto script = morph_utils::apply_variables(template_script, {
+        auto script = text_utils::apply_variables(template_script, {
                                                                         { "WorkGroupSize", to_string(WorkGroupSize) },
                                                                         { "BindGroupEntryUniform", to_string(BindGroupEntryUniform) },
                                                                         { "BindGroupEntryRead", to_string(BindGroupEntryRead) },
@@ -166,24 +152,26 @@ struct colors_simulate::Pimpl {
     bindgroup_wrapper m_bindgroup;
 };
 
-#pragma mark - colors_simulate
+#pragma mark - ColorSim
 
-colors_simulate::colors_simulate(dawn_wrapper::dawn_plugin dawn, unsigned count, unsigned padding)
-    : m_pimpl(make_shared<Pimpl>(dawn, count, padding))
+ColorSim::ColorSim(dawn_wrapper::dawn_plugin dawn, unsigned count, unsigned padding)
+    : m_pimpl(make_unique<Pimpl>(dawn, count, padding))
 {
 }
 
-void colors_simulate::simulate(float_t ft)
+ColorSim::~ColorSim() = default;
+
+void ColorSim::simulate(float_t ft)
 {
     m_pimpl->simulate(ft);
 }
 
-dawn_wrapper::buffer_wrapper colors_simulate::elements_buffer()
+dawn_wrapper::buffer_wrapper ColorSim::elements_buffer()
 {
     return m_pimpl->elements_buffer();
 }
 
-void colors_simulate::compute(dawn_wrapper::encoder_wrapper encoder)
+void ColorSim::compute(dawn_wrapper::encoder_wrapper encoder)
 {
     m_pimpl->compute(encoder);
 }
