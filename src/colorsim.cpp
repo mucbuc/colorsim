@@ -93,11 +93,11 @@ struct ColorSim::Pimpl {
         )";
 
         auto script = text_utils::apply_variables(template_script, {
-                                                                        { "WorkGroupSize", to_string(WorkGroupSize) },
-                                                                        { "BindGroupEntryUniform", to_string(BindGroupEntryUniform) },
-                                                                        { "BindGroupEntryRead", to_string(BindGroupEntryRead) },
-                                                                        { "BindGroupEntryWrite", to_string(BindGroupEntryWrite) },
-                                                                    });
+                                                                       { "WorkGroupSize", to_string(WorkGroupSize) },
+                                                                       { "BindGroupEntryUniform", to_string(BindGroupEntryUniform) },
+                                                                       { "BindGroupEntryRead", to_string(BindGroupEntryRead) },
+                                                                       { "BindGroupEntryWrite", to_string(BindGroupEntryWrite) },
+                                                                   });
 
         result.compile_shader(script, "colors_simulate");
         result.init_pipeline(layout);

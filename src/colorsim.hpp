@@ -5,8 +5,7 @@
 
 namespace ns {
 
-struct ColorSim
-{
+struct ColorSim {
     ColorSim(dawn_wrapper::dawn_plugin dawn, unsigned count, unsigned padding = 0);
     ~ColorSim();
 
