@@ -2,6 +2,7 @@
 
 #include <dawn_wrapper/src/dawn_wrapper.h>
 #include <memory>
+#include <string>
 
 namespace ns {
 
@@ -12,6 +13,7 @@ struct ColorSim {
     void simulate(float_t ft);
     dawn_wrapper::buffer_wrapper elements_buffer();
     void compute(dawn_wrapper::encoder_wrapper encoder);
+    static std::string get_wgsl_code(std::string class_name, std::string getter_name); 
 
 private:
     struct Pimpl;

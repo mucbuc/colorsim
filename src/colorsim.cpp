@@ -92,7 +92,7 @@ struct ColorSim::Pimpl {
             }
         )";
 
-        auto script = text_utils::apply_variables(template_script, {
+        auto script = text_utils::apply_variables(template_script, {   
                                                                        { "WorkGroupSize", to_string(WorkGroupSize) },
                                                                        { "BindGroupEntryUniform", to_string(BindGroupEntryUniform) },
                                                                        { "BindGroupEntryRead", to_string(BindGroupEntryRead) },
@@ -174,6 +174,28 @@ dawn_wrapper::buffer_wrapper ColorSim::elements_buffer()
 void ColorSim::compute(dawn_wrapper::encoder_wrapper encoder)
 {
     m_pimpl->compute(encoder);
+}
+
+std::string ColorSim::get_wgsl_code(std::string class_name, std::string getter_name)
+{
+    return text_utils::apply_variables( R"(
+        struct {{class_name}}
+        {
+            m_base: vec3f,
+            m_amp: vec3f,
+            m_mod_base: vec3f,
+            m_mod: vec3f,
+        };
+
+        fn {{getter_name}}(t: f32, p:{{class_name}}) -> vec3f
+        {
+            return p.m_base + p.m_amp * cos( PI2 * (p.m_mod * t + p.m_mod_base) );
+        }
+
+    )", {
+        {"class_name", class_name},
+        {"getter_name", getter_name},
+    });
 }
 
 }
