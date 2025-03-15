@@ -189,6 +189,7 @@ std::string ColorSim::get_wgsl_code(std::string class_name, std::string getter_n
 
         fn {{getter_name}}(t: f32, p:{{class_name}}) -> vec3f
         {
+            const PI2 = 2 * acos(-1);
             return p.m_base + p.m_amp * cos( PI2 * (p.m_mod * t + p.m_mod_base) );
         }
 
