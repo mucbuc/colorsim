@@ -27,7 +27,10 @@ struct ColorSim::Pimpl {
     };
 
     struct ColorsUniform {
-        ColorsUniform() : m_age(0) {}
+        ColorsUniform()
+            : m_age(0)
+        {
+        }
 
         float_t m_age;
     };
@@ -129,7 +132,7 @@ struct ColorSim::Pimpl {
     {
         m_uniform.m_age += ft;
 
-        m_uniform_colors.write(& m_uniform);
+        m_uniform_colors.write(&m_uniform);
         m_compute.compute(m_bindgroup, m_count / WorkGroupSize, 1, encoder);
     }
 

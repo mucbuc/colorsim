@@ -1,14 +1,13 @@
 /* example usage:
 
-cpp: 
+cpp:
 m_colors(dawn, 27, 5)
-... 
+...
 m_colors.get_wgsl_code("ColorPalette", "getColor", entry_colors, 0) },
 
-wgsl: 
+wgsl:
 var color = getColor(color_factor + PHI_HALF);
 */
-
 
 #pragma once
 
