@@ -27,6 +27,8 @@ struct ColorSim::Pimpl {
     };
 
     struct ColorsUniform {
+        ColorsUniform() : m_age(0) {}
+
         float_t m_age;
     };
 
@@ -112,6 +114,7 @@ struct ColorSim::Pimpl {
         , m_uniform_colors(m_dawn.make_dst_buffer(sizeof(ColorsUniform), buffer_type::uniform))
         , m_result(m_dawn.make_dst_buffer((m_count + padding) * sizeof(float_t), buffer_type::storage))
         , m_entries(m_dawn.make_dst_buffer(m_count * sizeof(PaletteEntry), buffer_type::storage))
+        , m_uniform()
         , m_compute(compile_shader(m_dawn))
         , m_bindgroup(m_compute.make_bindgroup())
     {
@@ -122,16 +125,11 @@ struct ColorSim::Pimpl {
         m_bindgroup.add_buffer(BindGroupEntryWrite, m_result);
     }
 
-    void simulate(float_t ft)
+    void simulate(float_t ft, dawn_wrapper::encoder_wrapper encoder)
     {
-        m_age += ft;
+        m_uniform.m_age += ft;
 
-        ColorsUniform uniform { m_age };
-        m_uniform_colors.write(&uniform);
-    }
-
-    void compute(dawn_wrapper::encoder_wrapper encoder)
-    {
+        m_uniform_colors.write(& m_uniform);
         m_compute.compute(m_bindgroup, m_count / WorkGroupSize, 1, encoder);
     }
 
@@ -144,10 +142,9 @@ struct ColorSim::Pimpl {
     unsigned m_count;
     std::vector<PaletteEntry> m_palette_entries;
     buffer_wrapper m_uniform_colors;
-    buffer_wrapper m_entries;
     buffer_wrapper m_result;
-    float_t m_age;
-
+    buffer_wrapper m_entries;
+    ColorsUniform m_uniform;
     compute_wrapper m_compute;
     bindgroup_wrapper m_bindgroup;
 };
@@ -161,22 +158,17 @@ ColorSim::ColorSim(dawn_wrapper::dawn_plugin dawn, unsigned count, unsigned padd
 
 ColorSim::~ColorSim() = default;
 
-void ColorSim::simulate(float_t ft)
+void ColorSim::simulate(float_t ft, dawn_wrapper::encoder_wrapper encoder)
 {
-    m_pimpl->simulate(ft);
+    m_pimpl->simulate(ft, encoder);
 }
 
-dawn_wrapper::buffer_wrapper ColorSim::elements_buffer()
+dawn_wrapper::buffer_wrapper ColorSim::buffer()
 {
     return m_pimpl->elements_buffer();
 }
 
-void ColorSim::compute(dawn_wrapper::encoder_wrapper encoder)
-{
-    m_pimpl->compute(encoder);
-}
-
-std::string ColorSim::get_wgsl_code(std::string class_name, std::string getter_name)
+std::string ColorSim::get_wgsl_code(std::string class_name, std::string getter_name, unsigned entry_colors, unsigned group)
 {
     return text_utils::apply_variables(R"(
         struct {{class_name}}
@@ -187,16 +179,20 @@ std::string ColorSim::get_wgsl_code(std::string class_name, std::string getter_n
             m_mod: vec3f,
         };
 
-        fn {{getter_name}}(t: f32, p:{{class_name}}) -> vec3f
+        @group({{group}}) @binding({{entry_colors}}) var<storage, read> colorsim_private_colors: {{class_name}};
+
+        fn {{getter_name}}(t: f32) -> vec3f
         {
             const PI2 = 2 * acos(-1);
+            var p = colorsim_private_colors;
             return p.m_base + p.m_amp * cos( PI2 * (p.m_mod * t + p.m_mod_base) );
         }
-
     )",
         {
+            { "group", to_string(group) },
             { "class_name", class_name },
             { "getter_name", getter_name },
+            { "entry_colors", to_string(entry_colors) },
         });
 }
 
