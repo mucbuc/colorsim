@@ -11,7 +11,7 @@ var color = getColor(color_factor + PHI_HALF);
 
 #pragma once
 
-#include <dawn_wrapper/src/dawn_wrapper.h>
+#include <dawn_wrapper/src/dawn_wrapper.hpp>
 #include <memory>
 #include <string>
 
