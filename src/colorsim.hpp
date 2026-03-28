@@ -22,7 +22,8 @@ struct ColorSim {
     ~ColorSim();
 
     void simulate(float_t ft, dawn_wrapper::encoder_wrapper encoder);
-    dawn_wrapper::buffer_wrapper buffer();
+    dawn_wrapper::buffer_wrapper buffer(unsigned index);
+    void set_buffer_index(unsigned index); 
     static std::string get_wgsl_code(std::string class_name, std::string getter_name, unsigned entry, unsigned group);
 
 private:

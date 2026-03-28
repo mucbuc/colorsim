@@ -3,10 +3,14 @@
 #include <asserter/src/asserter.hpp>
 #include <text_utils/text_utils.hpp>
 
+#include <array>
+
 using namespace std;
 using namespace dawn_wrapper;
 
 namespace ns {
+
+static constexpr unsigned max_buffers = 3;
 
 struct ColorSim::Pimpl {
 
@@ -115,17 +119,23 @@ struct ColorSim::Pimpl {
         , m_count(count)
         , m_palette_entries(make_palette_entries(m_count))
         , m_uniform_colors(m_dawn.make_dst_buffer(sizeof(ColorsUniform), buffer_type::uniform))
-        , m_result(m_dawn.make_dst_buffer((m_count + padding) * sizeof(float_t), buffer_type::storage))
+        , m_result()
         , m_entries(m_dawn.make_dst_buffer(m_count * sizeof(PaletteEntry), buffer_type::storage))
         , m_uniform()
         , m_compute(compile_shader(m_dawn))
-        , m_bindgroup(m_compute.make_bindgroup())
+        , m_bindgroup()
+        , m_buffer_index(0)
     {
-        m_entries.write(m_palette_entries.data());
+        for (auto i = 0; i < max_buffers; ++i) {
+            m_result[i] = m_dawn.make_dst_buffer((m_count + padding) * sizeof(float_t), buffer_type::storage);
+            m_bindgroup[i] = m_compute.make_bindgroup();
 
-        m_bindgroup.add_buffer(BindGroupEntryUniform, m_uniform_colors);
-        m_bindgroup.add_buffer(BindGroupEntryRead, m_entries);
-        m_bindgroup.add_buffer(BindGroupEntryWrite, m_result);
+            m_bindgroup[i].add_buffer(BindGroupEntryUniform, m_uniform_colors);
+            m_bindgroup[i].add_buffer(BindGroupEntryRead, m_entries);
+            m_bindgroup[i].add_buffer(BindGroupEntryWrite, m_result[i]);
+        }
+
+        m_entries.write(m_palette_entries.data());
     }
 
     void simulate(float_t ft, dawn_wrapper::encoder_wrapper encoder)
@@ -133,23 +143,29 @@ struct ColorSim::Pimpl {
         m_uniform.m_age += ft;
 
         m_uniform_colors.write(&m_uniform);
-        m_compute.compute(m_bindgroup, m_count / WorkGroupSize, 1, encoder);
+        m_compute.compute(m_bindgroup[m_buffer_index % max_buffers], m_count / WorkGroupSize, 1, encoder);
     }
 
-    buffer_wrapper elements_buffer()
+    buffer_wrapper elements_buffer(unsigned index)
     {
-        return m_result;
+        return m_result[index];
+    }
+
+    void set_buffer_index(unsigned index)
+    {
+        m_buffer_index = index % max_buffers;
     }
 
     dawn_plugin m_dawn;
     unsigned m_count;
     std::vector<PaletteEntry> m_palette_entries;
     buffer_wrapper m_uniform_colors;
-    buffer_wrapper m_result;
+    std::array<buffer_wrapper, max_buffers> m_result;
     buffer_wrapper m_entries;
     ColorsUniform m_uniform;
     compute_wrapper m_compute;
-    bindgroup_wrapper m_bindgroup;
+    std::array<bindgroup_wrapper, max_buffers> m_bindgroup;
+    unsigned m_buffer_index;
 };
 
 #pragma mark - ColorSim
@@ -166,9 +182,14 @@ void ColorSim::simulate(float_t ft, dawn_wrapper::encoder_wrapper encoder)
     m_pimpl->simulate(ft, encoder);
 }
 
-dawn_wrapper::buffer_wrapper ColorSim::buffer()
+dawn_wrapper::buffer_wrapper ColorSim::buffer(unsigned index)
 {
-    return m_pimpl->elements_buffer();
+    return m_pimpl->elements_buffer(index);
+}
+
+void ColorSim::set_buffer_index(unsigned index)
+{
+    m_pimpl->set_buffer_index(index);
 }
 
 std::string ColorSim::get_wgsl_code(std::string class_name, std::string getter_name, unsigned entry_colors, unsigned group)
