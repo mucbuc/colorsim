@@ -61,15 +61,8 @@ struct ColorSim::Pimpl {
         return entries;
     }
 
-    static compute_wrapper compile_shader(dawn_plugin dawn)
+    static void compile_shader(dawn_plugin dawn, compute_wrapper compute, bindgroup_layout_wrapper layout)
     {
-        auto result = dawn.make_compute();
-
-        auto layout = result.make_bindgroup_layout();
-        layout.add_uniform_buffer(BindGroupEntryUniform);
-        layout.add_read_only_buffer(BindGroupEntryRead);
-        layout.add_buffer(BindGroupEntryWrite);
-
         const auto template_script = R"(
             
             struct Uniform
@@ -104,10 +97,8 @@ struct ColorSim::Pimpl {
                                                                        { "BindGroupEntryWrite", to_string(BindGroupEntryWrite) },
                                                                    });
 
-        result.compile_shader(script, "colors_simulate");
-        result.init_pipeline(layout);
-
-        return result;
+        compute.compile_shader(script, "colors_simulate");
+        compute.init_pipeline(layout);
     }
 
     Pimpl(dawn_wrapper::dawn_plugin dawn, unsigned count, unsigned padding)
@@ -118,9 +109,19 @@ struct ColorSim::Pimpl {
         , m_result(m_dawn.make_dst_buffer((m_count + padding) * sizeof(float_t), buffer_type::storage))
         , m_entries(m_dawn.make_dst_buffer(m_count * sizeof(PaletteEntry), buffer_type::storage))
         , m_uniform()
-        , m_compute(compile_shader(m_dawn))
-        , m_bindgroup(m_compute.make_bindgroup())
+
+        
+        , m_compute(dawn.make_compute())
+        , m_layout(m_compute.make_bindgroup_layout())
+
+        , m_bindgroup(m_layout.make_bindgroup())
     {
+        m_layout.add_uniform_buffer(BindGroupEntryUniform);
+        m_layout.add_read_only_buffer(BindGroupEntryRead);
+        m_layout.add_buffer(BindGroupEntryWrite);
+
+        compile_shader(m_dawn, m_compute, m_layout);
+
         m_entries.write(m_palette_entries.data());
 
         m_bindgroup.add_buffer(BindGroupEntryUniform, m_uniform_colors);
@@ -149,6 +150,7 @@ struct ColorSim::Pimpl {
     buffer_wrapper m_entries;
     ColorsUniform m_uniform;
     compute_wrapper m_compute;
+    bindgroup_layout_wrapper m_layout;
     bindgroup_wrapper m_bindgroup;
 };
 
