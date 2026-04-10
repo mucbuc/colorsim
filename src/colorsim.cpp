@@ -109,11 +109,8 @@ struct ColorSim::Pimpl {
         , m_result(m_dawn.make_dst_buffer((m_count + padding) * sizeof(float_t), buffer_type::storage))
         , m_entries(m_dawn.make_dst_buffer(m_count * sizeof(PaletteEntry), buffer_type::storage))
         , m_uniform()
-
-        
         , m_compute(dawn.make_compute())
         , m_layout(m_compute.make_bindgroup_layout())
-
         , m_bindgroup(m_layout.make_bindgroup())
     {
         m_layout.add_uniform_buffer(BindGroupEntryUniform);
